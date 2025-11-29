@@ -1,0 +1,159 @@
+DHT:
+#define Pino_DHT x
+#define Tipo_DHT DHT11
+DHT Nome_SensorDHT(Pino_DHT, Tipo_DHT); //tipo DHT11
+dht.begin();
+float Nome_variavel_temperatura = dht.readTemperature(); //Lê temperatura em celsius
+float Nome_variavel_umidade = dht.readHumidity(); //Lê umidade
+
+
+
+
+
+REVER ISSO AQUI
+    if ((temp < 0 || temp > 25) && buzzerAtivo) {
+      digitalWrite(BUZZER, HIGH);
+      Serial.println("Perigo! Buzzer ligado!");
+    } else {
+      digitalWrite(BUZZER, LOW);
+    }
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+LED RGB: 
+#define ledr x
+#define ledg y
+#define ledb z
+
+// true = catodo comum, false = anodo comum
+#define LED_COMUM_CATHODE true
+
+No void setup:
+// define os pinos para ligar o LED RGB
+  pinMode(LED_R, OUTPUT);
+  pinMode(LED_G, OUTPUT);
+  pinMode(LED_B, OUTPUT);
+
+
+
+// --- Funciona o led ser for anodo ou catodo (detecta "automaticamente") ---
+void setRGB(int r, int g, int b) {
+  if(LED_COMUM_CATHODE) {
+    digitalWrite(LED_R, r ? LOW : HIGH);
+    digitalWrite(LED_G, g ? LOW : HIGH);
+    digitalWrite(LED_B, b ? LOW : HIGH);
+  } else { // anodo comum
+    digitalWrite(LED_R, r ? HIGH : LOW);
+    digitalWrite(LED_G, g ? HIGH : LOW);
+    digitalWrite(LED_B, b ? HIGH : LOW);
+  }
+}
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+FOTORRESISTOR:
+#define pino_LDR x
+  // --- Luminosidade ---
+  int luz = analogRead(LDR_PIN);
+  Serial.print("Luminosidade: ");
+  Serial.println(luz);
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+BOTÃO:
+#define botão x 
+volatile bool ligado = true;
+  void IRAM_ATTR trocaEstado() {    //função para inverter um estado definido quando apertar o botão
+    ligado = !ligado;
+  }
+pinMode(botao, INPUT_PULLUP); 
+attachInterrupt(digitalPinToInterrupt(botao), trocaEstado, FALLING);
+
+
+// --- Flag do botão ---
+volatile bool botaoPressionado = false;
+
+// --- Interrupção do botão ---
+void IRAM_ATTR isrBotao() {
+  botaoPressionado = true;
+}
+
+
+
+No void loop:
+
+// --- Tratamento do botão ---
+  if (botaoPressionado) {
+    botaoPressionado = false;
+    sistemaAtivo = !sistemaAtivo;
+    if (!sistemaAtivo) {
+      setRGB(0, 0, 0);
+      digitalWrite(BUZZER, LOW);
+      btLedAtivo = false;
+      tempAtiva = false;
+      detectorAtivo = false;
+      buzzerAtivo = false;
+      Serial.println("Sistema desligado pelo botão!");
+    } else {
+      tempAtiva = true;
+      detectorAtivo = true;
+      buzzerAtivo = true;
+      Serial.println("Sistema reativado!");
+    }
+  }
+
+  if (!sistemaAtivo) {
+    delay(500);
+    return;
+  }
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+POTENCIOMETRO:
+#define pin_pot x
+ Void setup:
+ pinMode(pin_pot, INPUT);
+
+Void loop:
+  int pot = analogRead(pin_pot);
+    if (pot < 1365) setRGB(1, 0, 0);      // vermelho
+    else if (pot < 2730) setRGB(1, 1, 0); // amarelo
+    else setRGB(0, 0, 1);                 // azul
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+BUZZER:
+#define buzzer x
+pinMode(BUZZER, OUTPUT);
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+BLUETOOTH:
+#include "BluetoothSerial.h"
+
+BluetoothSerial Nome_BT;  // Cria o objeto Bluetooth
+
+void setup() {
+  Nome_BT.begin("ESP32");  // Nome que aparecerá no celular
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+WIFI:
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+// ---- Wi-Fi ----
+const char* ssid     = "SEU_WIFI";
+const char* password = "SENHA_WIFI";
+
+// ---- MQTT ----
+const char* mqttServer = "broker.hivemq.com";
+const int   mqttPort   = 1883;
+
+WiFiClient espClient;
+PubSubClient mqtt(espClient);
+
+void setup() {
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) delay(100);
+
+  mqtt.setServer(mqttServer, mqttPort);
+}
+
+void loop() {
+  if (!mqtt.connected()) {
+    mqtt.connect("ESP32_TESTE");
+  }
+
+  mqtt.loop();
+}
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
